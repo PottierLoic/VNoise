@@ -1,5 +1,6 @@
 module main
 
+import rand
 import gg
 import gx
 
@@ -10,7 +11,6 @@ const (
 	screen_width = grid_width * pixel_size
 	screen_height = grid_height * pixel_size
 )
-
 
 fn fcolor(val f32) gx.Color {
 	return gx.Color{r: u8(255*val), g: u8(255*val), b: u8(255*val), a: 255}
@@ -28,7 +28,11 @@ struct App {
 fn (mut app App) display_noise() {
 	for x in 0..grid_width {
 		for y in 0..grid_height {
-			unsafe { app.pixels[y * grid_width + x] = u32(fcolor(app.noise[x][y]).abgr8()) }
+			for dx in 0..pixel_size {
+				for dy in 0..pixel_size {
+					unsafe { app.pixels[( y + dy ) * grid_width + x + dx] = u32(fcolor(app.noise[x][y]).abgr8()) }
+				}
+			}
 		}
 	}
 
@@ -83,5 +87,7 @@ fn main() {
 		create_window: true
 		window_title: 'V Noise'
 	)
+
+	rand.seed([u32(3807353518), 2705198303])
 	app.gg.run()
 }
