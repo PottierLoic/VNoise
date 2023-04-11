@@ -4,10 +4,11 @@ import gg
 import gx
 
 const (
-	width = 800
-	height = 800
-	section_size = 100
-	vectors = [[1.0, 0.0], [1.0, 1.0], [0.0, 1.0], [-1.0, 1.0], [-1.0, 0.0], [-1.0, -1.0], [0.0, -1.0], [1.0, -1.0]]
+	grid_width = 200
+	grid_height = 200
+	pixel_size = 2
+	screen_width = grid_width * pixel_size
+	screen_height = grid_height * pixel_size
 )
 
 
@@ -19,15 +20,16 @@ struct App {
 	mut:
 		gg &gg.Context = unsafe { nil }
 		iidx int
-		noise_type int = 0
-		noise []f32
-		pixels &u32 = unsafe { vcalloc(width * height * sizeof(f32)) }
+		noise_type int
+		pixels &u32 = unsafe { vcalloc(screen_width * screen_height * sizeof(f32)) }
+		noise [][]f32
 }
 
 fn (mut app App) display_noise() {
-	// converting noise to pixel
-	for i := 0; i < width * height; i++ {
-		app.pixels[i] = u32(fcolor(app.noise[i]).abgr8())
+	for x in 0..grid_width {
+		for y in 0..grid_height {
+			unsafe { app.pixels[y * grid_width + x] = u32(fcolor(app.noise[x][y]).abgr8()) }
+		}
 	}
 
 	mut istream_image := app.gg.get_cached_image_by_idx(app.iidx)
@@ -36,17 +38,20 @@ fn (mut app App) display_noise() {
 	app.gg.draw_image(0, 0, size.width, size.height, istream_image)
 }
 
+fn (mut app App) generate_noise() {
+	if app.noise_type == 0 {
+		app.noise = noise(grid_width, grid_height)
+	} else if app.noise_type == 1 {
+		app.noise = perlin(grid_width, grid_height)
+	}
+}
+
 fn graphics_init(mut app App) {
-	app.iidx = app.gg.new_streaming_image(width, height, 4, pixel_format: .rgba8)
+	app.iidx = app.gg.new_streaming_image(grid_width, grid_height, 4, pixel_format: .rgba8)
 }
 
 fn frame(mut app App) {
 	app.gg.begin()
-	if app.noise_type == 0 {
-		app.noise = noise(width, height)
-	} else if app.noise_type == 1 {
-		app.noise = perlin_noise(width, height, section_size, vectors)
-	}
 	app.display_noise()
 	app.gg.end()
 }
@@ -58,20 +63,22 @@ fn keydown (code gg.KeyCode, mod gg.Modifier, mut app App) {
 			app.noise_type = 0
 		}
 		print('noise type: $app.noise_type\n')
-		
+	} else if code == gg.KeyCode.enter {
+		app.generate_noise()
 	}
 }
 
 fn main() {
 	mut app := App {
 		gg: 0
+		noise: noise(grid_width, grid_height)
 	}
 	app.gg = gg.new_context(
 		frame_fn: frame
 		init_fn: graphics_init
 		user_data: &app
-		width: width
-		height: height
+		width: screen_width
+		height: screen_height
 		keydown_fn: keydown
 		create_window: true
 		window_title: 'V Noise'
