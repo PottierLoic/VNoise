@@ -44,9 +44,11 @@ fn (mut app App) display_noise() {
 
 fn (mut app App) generate_noise() {
 	if app.noise_type == 0 {
+		print("noise generated")
 		app.noise = noise(grid_width, grid_height)
 	} else if app.noise_type == 1 {
-		app.noise = perlin(grid_width, grid_height)
+		print("perlin generated")
+		app.noise = perlin(grid_width, grid_height) or { [[f32(0)]] }
 	}
 }
 
