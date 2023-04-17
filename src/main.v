@@ -5,11 +5,11 @@ import gg
 import gx
 
 const (
-	grid_width = 200
-	grid_height = 200
-	pixel_size = 2
-	screen_width = grid_width * pixel_size
-	screen_height = grid_height * pixel_size
+	screen_width = 600
+	screen_height = 600
+	pixel_size = 1
+	grid_width = screen_width / pixel_size
+	grid_height = screen_height / pixel_size
 )
 
 fn fcolor(val f32) gx.Color {
@@ -26,11 +26,13 @@ struct App {
 }
 
 fn (mut app App) display_noise() {
-	for x in 0..grid_width {
-		for y in 0..grid_height {
+	for x in 0..screen_width {
+		for y in 0..screen_height {
 			for dx in 0..pixel_size {
 				for dy in 0..pixel_size {
-					unsafe { app.pixels[( y + dy ) * grid_width + x + dx] = u32(fcolor(app.noise[x][y]).abgr8()) }
+					if x + dx < grid_width && y + dy < grid_height {
+						unsafe { app.pixels[( y + dy ) * grid_width + x + dx] = u32(fcolor(app.noise[x][y]).abgr8()) }
+					}
 				}
 			}
 		}
@@ -46,7 +48,7 @@ fn (mut app App) generate_noise() {
 	if app.noise_type == 0 {
 		app.noise = noise(grid_width, grid_height)
 	} else if app.noise_type == 1 {
-		app.noise = perlin(grid_width, grid_height)
+		app.noise = perlin_array(grid_width, grid_height)
 	}
 }
 
