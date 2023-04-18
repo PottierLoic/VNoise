@@ -5,8 +5,11 @@ import gg
 import gx
 
 const (
-	screen_width = 400
-	screen_height = 400 
+	screen_width = 600
+	screen_height = 600
+	pixel_size = 1
+	grid_width = screen_width / pixel_size
+	grid_height = screen_height / pixel_size
 )
 
 fn fcolor(val f32) gx.Color {
