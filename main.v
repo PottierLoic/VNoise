@@ -5,11 +5,8 @@ import gg
 import gx
 
 const (
-	grid_width = 200
-	grid_height = 200
-	pixel_size = 2
-	screen_width = grid_width * pixel_size
-	screen_height = grid_height * pixel_size
+	screen_width = 400
+	screen_height = 400 
 )
 
 fn fcolor(val f32) gx.Color {
@@ -26,13 +23,9 @@ struct App {
 }
 
 fn (mut app App) display_noise() {
-	for x in 0..grid_width {
-		for y in 0..grid_height {
-			for dx in 0..pixel_size {
-				for dy in 0..pixel_size {
-					unsafe { app.pixels[( y + dy ) * grid_width + x + dx] = u32(fcolor(app.noise[x][y]).abgr8()) }
-				}
-			}
+	for x in 0..screen_width {
+		for y in 0..screen_height {
+			unsafe { app.pixels[( y) * screen_width + x] = u32(fcolor(app.noise[x][y]).abgr8()) }
 		}
 	}
 
@@ -45,15 +38,15 @@ fn (mut app App) display_noise() {
 fn (mut app App) generate_noise() {
 	if app.noise_type == 0 {
 		print("noise generated")
-		app.noise = noise(grid_width, grid_height)
+		app.noise = noise(screen_width, screen_height)
 	} else if app.noise_type == 1 {
 		print("perlin generated")
-		app.noise = perlin(grid_width, grid_height) or { [[f32(0)]] }
+		app.noise = fractal_perlin_array(screen_width, screen_height, 100, 8, 0.35, 2)
 	}
 }
 
 fn graphics_init(mut app App) {
-	app.iidx = app.gg.new_streaming_image(grid_width, grid_height, 4, pixel_format: .rgba8)
+	app.iidx = app.gg.new_streaming_image(screen_width, screen_height, 4, pixel_format: .rgba8)
 }
 
 fn frame(mut app App) {
@@ -77,7 +70,7 @@ fn keydown (code gg.KeyCode, mod gg.Modifier, mut app App) {
 fn main() {
 	mut app := App {
 		gg: 0
-		noise: noise(grid_width, grid_height)
+		noise: noise(screen_width, screen_height)
 	}
 	app.gg = gg.new_context(
 		frame_fn: frame
