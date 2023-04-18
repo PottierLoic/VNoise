@@ -89,7 +89,6 @@ fn perlin(xx f32, yy f32, perm []int) f32 {
 fn perlin_array(width int, height int, res int) [][]f32 {
 	new_perm := rand.shuffle_clone(perm) or { perm }
 	mut grid := [][]f32{}
-
 	for y in 0 .. height {
 		grid << []f32{}
 		yy := f32(y * (1 / f32(res)))

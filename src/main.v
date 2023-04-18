@@ -6,10 +6,13 @@ import gx
 const (
 	screen_width  = 900
 	screen_height = 600
-	menu_size = screen_width-screen_height
-	bg_color = gx.rgb(36, 66, 216)
-	button_color = gx.rgb(115, 138, 250)
-	text_cfg = gx.TextCfg{
+	menu_size     = screen_width - screen_height
+	bg_color      = gx.rgb(124, 124, 124)
+	button_color  = gx.rgb(51, 51, 51)
+	grid_width 	  = screen_width - menu_size
+	grid_height   = screen_height
+	pixel_size    = 1
+	text_cfg      = gx.TextCfg{
 		color: gx.white
 		size: 20
 		align: .center
@@ -28,24 +31,25 @@ fn fcolor(val f32) gx.Color {
 
 struct App {
 mut:
-	gg          &gg.Context = unsafe { nil }
-	iidx        int
-	pixels      &u32 = unsafe { vcalloc(screen_width * screen_height * sizeof(f32)) }
-	noise_type  int
-	noise       [][]f32
-	grid_width  int = screen_width-menu_size
-	grid_height int = screen_height
-	pixel_size  int = 1
+	gg         &gg.Context = unsafe { nil }
+	iidx       int
+	pixels     &u32 = unsafe { vcalloc(screen_width * screen_height * sizeof(f32)) }
+	noise_type int
+	noise      [][]f32
 }
 
 fn (mut app App) display_noise() {
 	// noise drawing
-	for x in 0 .. app.grid_width {
-		for y in 0 .. app.grid_height {
-			for xx in 0 .. app.pixel_size {
-				for yy in 0 .. app.pixel_size {
-					if x * app.pixel_size + xx >= app.grid_width * app.pixel_size || y * app.pixel_size + yy >= app.grid_height * app.pixel_size { continue }
-					unsafe { app.pixels[(y * app.pixel_size + yy)*screen_width  + x * app.pixel_size + xx] = u32(fcolor(app.noise[x][y]).abgr8()) }
+	for x in 0 .. grid_width {
+		for y in 0 .. grid_height {
+			for xx in 0 .. pixel_size {
+				for yy in 0 .. pixel_size {
+					if x * pixel_size + xx >= grid_width * pixel_size || y * pixel_size + yy >= grid_height * pixel_size {
+						continue
+					}
+					unsafe {
+						app.pixels[(y * pixel_size + yy) * screen_width + x * pixel_size + xx] = u32(fcolor(app.noise[x][y]).abgr8())
+					}
 				}
 			}
 		}
@@ -59,16 +63,22 @@ fn (mut app App) display_noise() {
 
 	// UI display
 	app.gg.draw_rect_filled(screen_height + 50, screen_height / 6, menu_size - 100, 60, button_color)
-	app.gg.draw_text(screen_height + menu_size / 2, screen_height / 6 + 30, "Noise generator", text_cfg)
+	app.gg.draw_text(screen_height + menu_size / 2, screen_height / 6 + 30, 'Noise generator', text_cfg)
+
+	// generation button
+	app.gg.draw_rect_filled(screen_height + 50, screen_height / 6 + 300, menu_size - 100, 60, button_color)
+	app.gg.draw_text(screen_height + menu_size / 2, screen_height / 6 + 330, 'Generate', text_cfg)
+
+	// change type button
+	app.gg.draw_rect_filled(screen_height + 50, screen_height / 6 + 400, menu_size - 100, 60, button_color)
+	app.gg.draw_text(screen_height + menu_size / 2, screen_height / 6 + 430, 'Change type',	text_cfg)
 }
 
 fn (mut app App) generate_noise() {
 	if app.noise_type == 0 {
-		print('noise generated')
-		app.noise = noise(app.grid_width, app.grid_width)
+		app.noise = noise(grid_width, grid_width)
 	} else if app.noise_type == 1 {
-		print('perlin generated')
-		app.noise = fractal_perlin_array(app.grid_width, app.grid_height, 100, 8, 0.65, 2)
+		app.noise = fractal_perlin_array(grid_width, grid_height, 100, 8, 0.65, 2)
 	}
 }
 
@@ -88,9 +98,25 @@ fn keydown(code gg.KeyCode, mod gg.Modifier, mut app App) {
 		if app.noise_type > 1 {
 			app.noise_type = 0
 		}
-		print('noise type: ${app.noise_type}\n')
 	} else if code == gg.KeyCode.enter {
 		app.generate_noise()
+	}
+}
+
+fn click(x f32, y f32, btn gg.MouseButton, mut app App) {
+	if btn == .left {
+		// check if clicked on buttons
+		if x > screen_height + 50 && x < screen_height + menu_size - 50 {
+			if y > screen_height / 6 + 300 && y < screen_height / 6 + 360 {
+				app.generate_noise()
+			} else if y > screen_height / 6 + 400 && y < screen_height / 6 + 460 {
+				app.noise_type++
+				if app.noise_type > 1 {
+					app.noise_type = 0
+				}
+				app.generate_noise()
+			}
+		}
 	}
 }
 
@@ -107,6 +133,7 @@ fn main() {
 		width: screen_width
 		height: screen_height
 		keydown_fn: keydown
+		click_fn: click
 		create_window: true
 		window_title: 'V Noise'
 	)
